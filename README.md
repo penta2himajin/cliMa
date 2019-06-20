@@ -2,11 +2,11 @@
 A very small and lightweight Command Line Interface based mastodon client
 
 ## Howto
-1. clone this repo and go to bin/Release
-2. start cliMa.exe
-3. type instance URL and email, password
-4. Have fun!
-*if you want to know about command, type `help`.
+1. `git clone git@github.com:penta2tech/cliMa.git`
+2. `cd cliMa/project/bin/Release`
+3. `.\cliMa.exe`
+4. type instance URL and email, password
+5. Have fun! (if you want to know about command, type `help`).
 
 ## Used Library
 ### [Masto.NET](https://github.com/glacasa/Mastonet) by [glacasa](https://github.com/glacasa)
