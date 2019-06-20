@@ -202,8 +202,6 @@ Enter 'help' and Read about the command.");
             var auth = authClient.ConnectWithPassword(mail, passwd).Result;
             using (StreamWriter w = new StreamWriter(path))
             {
-                w.WriteLine(app.ClientId);
-                w.WriteLine(app.ClientSecret);
                 w.WriteLine(app.Instance);
                 w.WriteLine(auth.AccessToken);
             }
@@ -218,8 +216,6 @@ Enter 'help' and Read about the command.");
             var Auth = new Auth();
             using (StreamReader r = new StreamReader(path))
             {
-                App.ClientId = r.ReadLine();
-                App.ClientSecret = r.ReadLine();
                 App.Instance = r.ReadLine();
                 Auth.AccessToken = r.ReadLine();
             }
