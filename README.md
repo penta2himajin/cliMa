@@ -2,7 +2,7 @@
 A very small and lightweight Command Line Interface based mastodon client
 
 ## Howto
-1. `git clone git@github.com:penta2tech/cliMa.git`
+1. `git clone https://github.com/penta2tech/cliMa`
 2. `cd cliMa/project/bin/Release`
 3. `.\cliMa.exe`
 4. type instance URL and email, password
