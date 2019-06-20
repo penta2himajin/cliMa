@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 using Mastonet;//Copyright(c) 2019 glacasa
 using Mastonet.Entities;
 
-namespace Clima
+namespace CliMa
 {
     class Program
     {
