@@ -157,7 +157,7 @@ Default Toot type is 'Public'
  -u: Set Toot type once to Unlisted
  -p: Set Toot type once to Private
  -d: Set Toot type once to Direct
- (SpoilerText) -s: Write SpoilerText to Toot");
+ -s (SpoilerText): Write SpoilerText to Toot");
                                         break;
                                 }
                             }
@@ -166,7 +166,7 @@ Default Toot type is 'Public'
                                 Console.WriteLine(@"
 <Command List>
 -> timeline [-l|-h|-f]
--> toot [-u|-p|-d] [(SpoilerText) -s] (Content)
+-> toot [-u|-p|-d] [-s (SpoilerText)] (Content)
 -> help
 If you want more help, type 'help [timeline|toot]'");
                             }
