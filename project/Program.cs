@@ -1,22 +1,22 @@
-﻿using System;
-using System.IO;
-using System.Text;
-using System.Linq;
-using System.Diagnostics;
-using System.Text.RegularExpressions;
-using System.Security.Cryptography;
-using Mastonet;//Copyright(c) 2019 glacasa
+﻿using Mastonet;//Copyright(c) 2019 glacasa
 using Mastonet.Entities;
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace CliMa
 {
     class Program
     {
-        static readonly string path = Path.GetFullPath("i.secret"),
-                               exec_path = Environment.CurrentDirectory + @"\cliMa.exe";
+        static readonly string path = Path.GetFullPath(".secret"),
+                               exec_path = Path.GetFullPath("cliMa.exe");
 
         /* 主機能の実装 */
-        static void Main(string[] args)
+        static void Main()
         {
             Program cliMa = new Program();
             Console.SetWindowPosition(0, 0);
@@ -108,7 +108,7 @@ namespace CliMa
                                         switch (Input[1])
                                         {
                                             case "-u":
-                                                client.PostStatus(Input[4], Visibility.Unlisted, sensitive:true, spoilerText:Input[3]);
+                                                client.PostStatus(Input[4], Visibility.Unlisted, sensitive: true, spoilerText: Input[3]);
                                                 break;
 
                                             case "-p":
@@ -201,14 +201,12 @@ Enter 'help' and Read about the command.");
             mail = Console.ReadLine().ToString();
             Console.WriteLine("Enter the Password registered for the instance.");
             passwd = ReadPassword();
-
-            Console.WriteLine(path);
             var authClient = new AuthenticationClient(instance);
             var app = authClient.CreateApp("cliMa", Scope.Read | Scope.Write | Scope.Follow).Result;
             var auth = authClient.ConnectWithPassword(mail, passwd).Result;
             Console.WriteLine("Enter the Application Password for starting cliMa.");
-            using (var cryptor = new Cryptor(ReadPassword()))//password input
             using (StreamWriter w = new StreamWriter(path))
+            using (var cryptor = new Cryptor(ReadPassword()))//password input
             {
                 w.WriteLine(Convert.ToBase64String(cryptor.Encode(app.Instance)));
                 w.WriteLine(Convert.ToBase64String(cryptor.Encode(auth.AccessToken)));
@@ -226,20 +224,12 @@ Enter 'help' and Read about the command.");
             var Auth = new Auth();
             Console.WriteLine("Enter the Application Password for starting cliMa.");
             using (StreamReader r = new StreamReader(path))
-            {
-                App.Instance = r.ReadLine();
-                Auth.AccessToken = r.ReadLine();
-            }
             using (var cryptor = new Cryptor(ReadPassword()))//password input
             {
-                App.Instance = cryptor.Decode(Convert.FromBase64String(App.Instance));
-                Auth.AccessToken = cryptor.Decode(Convert.FromBase64String(Auth.AccessToken));
+                App.Instance = cryptor.Decode(Convert.FromBase64String(r.ReadLine()));
+                Auth.AccessToken = cryptor.Decode(Convert.FromBase64String(r.ReadLine()));
             }
             var client = new MastodonClient(App, Auth);
-            if (client.AuthToken != null)
-            {
-                //pass
-            }
             return client;
         }
 
