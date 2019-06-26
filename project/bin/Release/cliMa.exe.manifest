@@ -42,14 +42,14 @@
     </dependentAssembly>
   </dependency>
   <dependency>
-    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="cliMa.exe" size="12208">
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="cliMa.exe" size="14768">
       <assemblyIdentity name="cliMa" version="1.0.0.0" language="neutral" processorArchitecture="msil" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
         <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-        <dsig:DigestValue>K4CAQ4Nm70Zsk+s4E5+sKRopbJEoSl9v643b/QgzmVw=</dsig:DigestValue>
+        <dsig:DigestValue>N2apiY+hLkNCZw1w6saQFt3LCe92OG50CbiG8sV8oQU=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>

@@ -1,6 +1,10 @@
 ﻿using System;
 using System.IO;
+using System.Text;
+using System.Linq;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
+using System.Security.Cryptography;
 using Mastonet;//Copyright(c) 2019 glacasa
 using Mastonet.Entities;
 
@@ -8,7 +12,8 @@ namespace CliMa
 {
     class Program
     {
-        static readonly string path = Path.GetFullPath("i.secret");
+        static readonly string path = Path.GetFullPath("i.secret"),
+                               exec_path = Environment.CurrentDirectory + @"\cliMa.exe";
 
         /* 主機能の実装 */
         static void Main(string[] args)
@@ -25,7 +30,8 @@ namespace CliMa
  / /  __  / / / / / /    \ /    \ \ \ \ \   \
 / /__/ / / / / / / /     | |     \ \ \ \_\   \
 \_____/ /_/ /_/ /_/      |_|      \_\ \____/\_\");
-            MastodonClient client = File.Exists(path) ? cliMa.LoginClient() : cliMa.RegistClient();
+            if (!File.Exists(path)) cliMa.RegistClient();
+            MastodonClient client = cliMa.LoginClient();
             Console.WriteLine("\nLogin Succeeded.");
             TimelineStreaming stream = cliMa.StreamTimeline(client, TimelineType.Local);
             stream.Start();
@@ -185,7 +191,7 @@ Enter 'help' and Read about the command.");
 
         /* アプリケーションの認証処理をする関数群の実装 */
         //Client(ここではcliMa)のMastodon側への登録とTokenの取得
-        private MastodonClient RegistClient()
+        private void RegistClient()
         {
             string instance, mail, passwd;
             Console.WriteLine("Application registration (first time only).");
@@ -194,21 +200,23 @@ Enter 'help' and Read about the command.");
             Console.WriteLine("Enter the Email address registered with the instance.");
             mail = Console.ReadLine().ToString();
             Console.WriteLine("Enter the Password registered for the instance.");
-            passwd = Console.ReadLine().ToString();
+            passwd = ReadPassword();
 
             Console.WriteLine(path);
             var authClient = new AuthenticationClient(instance);
             var app = authClient.CreateApp("cliMa", Scope.Read | Scope.Write | Scope.Follow).Result;
             var auth = authClient.ConnectWithPassword(mail, passwd).Result;
+            Console.WriteLine("Enter the Application Password for starting cliMa.");
+            using (var cryptor = new Cryptor(ReadPassword()))//password input
             using (StreamWriter w = new StreamWriter(path))
             {
-                w.WriteLine(app.ClientId);
-                w.WriteLine(app.ClientSecret);
-                w.WriteLine(app.Instance);
-                w.WriteLine(auth.AccessToken);
+                w.WriteLine(Convert.ToBase64String(cryptor.Encode(app.Instance)));
+                w.WriteLine(Convert.ToBase64String(cryptor.Encode(auth.AccessToken)));
             }
             Console.WriteLine("Registration completed.");
-            return LoginClient();
+            Console.WriteLine("restarting this software.");
+            Process.Start(exec_path);
+            Environment.Exit(0);
         }
 
         //Mastodon側へのログイン処理とストリーム接続ソケットの引き渡し
@@ -216,12 +224,16 @@ Enter 'help' and Read about the command.");
         {
             var App = new AppRegistration();
             var Auth = new Auth();
+            Console.WriteLine("Enter the Application Password for starting cliMa.");
             using (StreamReader r = new StreamReader(path))
             {
-                App.ClientId = r.ReadLine();
-                App.ClientSecret = r.ReadLine();
                 App.Instance = r.ReadLine();
                 Auth.AccessToken = r.ReadLine();
+            }
+            using (var cryptor = new Cryptor(ReadPassword()))//password input
+            {
+                App.Instance = cryptor.Decode(Convert.FromBase64String(App.Instance));
+                Auth.AccessToken = cryptor.Decode(Convert.FromBase64String(Auth.AccessToken));
             }
             var client = new MastodonClient(App, Auth);
             if (client.AuthToken != null)
@@ -277,6 +289,99 @@ Enter 'help' and Read about the command.");
             HTML = Regex.Replace(HTML, "<br>", "\n");
             string REG = "<[^<>]+>|</.+>";
             return string.IsNullOrEmpty(TAG) ? Regex.Replace(HTML, REG, string.Empty) : Regex.Replace(Regex.Match(HTML, "<" + TAG + ">(.*)</" + TAG + ">").ToString(), REG, string.Empty);
+        }
+
+        //パスワード入力を受け取る関数
+        public static string ReadPassword()
+        {
+            var password = new StringBuilder();
+
+            while (true)
+            {
+                var keyinfo = Console.ReadKey(true);
+
+                switch (keyinfo.Key)
+                {
+                    case ConsoleKey.Enter:
+                        Console.WriteLine();
+                        return password.ToString();
+
+                    case ConsoleKey.Backspace:
+                        if (0 < password.Length)
+                            password.Length -= 1;
+                        else
+                            Console.Beep();
+                        break;
+
+                    default:
+                        if (Char.IsLetter(keyinfo.KeyChar))
+                        {
+                            if ((keyinfo.Modifiers & ConsoleModifiers.Shift) == 0)
+                            {
+                                password.Append(keyinfo.KeyChar);
+                            }
+                            else
+                            {
+                                if (Console.CapsLock) password.Append(Char.ToLower(keyinfo.KeyChar));
+                                else password.Append(Char.ToUpper(keyinfo.KeyChar));
+                            }
+                        }
+                        else if (!Char.IsControl(keyinfo.KeyChar))
+                        {
+                            password.Append(keyinfo.KeyChar);
+                        }
+                        else
+                        {
+                            Console.Beep();
+                        }
+                        break;
+                }
+            }
+        }
+    }
+
+    class Cryptor : IDisposable
+    {
+        public Cryptor(string password)
+        {
+            using (var hash = new SHA512Managed())
+            {
+                var data = hash.ComputeHash(Encoding.UTF8.GetBytes(password));
+                Algorithm.KeySize = 256;
+                Algorithm.Key = data.Take(32).ToArray();
+                Algorithm.IV = data.Skip(32).Take(16).ToArray();
+            }
+        }
+
+        protected SymmetricAlgorithm Algorithm { get; private set; } = new AesManaged();
+
+        public byte[] Encode(string text)
+        {
+            using (var memoryStream = new MemoryStream())
+            {
+                using (var cryptoStream = new CryptoStream(memoryStream, Algorithm.CreateEncryptor(), CryptoStreamMode.Write))
+                {
+                    var buffer = Encoding.UTF8.GetBytes(text);
+                    cryptoStream.Write(buffer, 0, buffer.Length);
+                }
+                return memoryStream.ToArray();
+            }
+        }
+
+        public string Decode(byte[] encoded)
+        {
+            using (var memoryStream = new MemoryStream(encoded))
+            using (var cryptoStream = new CryptoStream(memoryStream, Algorithm.CreateDecryptor(), CryptoStreamMode.Read))
+            using (var reader = new StreamReader(cryptoStream, Encoding.UTF8))
+            {
+                return reader.ReadToEnd();
+            }
+        }
+
+        public void Dispose()
+        {
+            Algorithm?.Dispose();
+            Algorithm = null;
         }
     }
 }
